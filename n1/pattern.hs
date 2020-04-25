@@ -22,13 +22,13 @@ substitute wc (l:ls) sub
     | wc == l = sub ++ (substitute wc ls sub)
     | otherwise = l : (substitute wc ls sub)
 
--- match :: Eq a => a -> [a] -> [a] -> Maybe [a] (Type will make debug print error)
+match :: Eq a => a -> [a] -> [a] -> Maybe [a] 
 match _ [] [] = Just []
-match _ [] _ = Nothing `debug` "match got empty p"
-match _ _ [] = Nothing `debug` "match got empty s"
+match _ [] _ = Nothing -- `debug` "match got empty p"
+match _ _ [] = Nothing -- `debug` "match got empty s"
 match wc (p:pp) (s:ss)
     | p == wc = orElse (singleWildcardMatch (p:pp) (s:ss)) (longerWildcardMatch (p:pp) (s:ss))
-    | p == s = match wc pp ss `debug` "trimming"
+    | p == s = match wc pp ss -- `debug` "trimming"
     | otherwise = Nothing
 
 singleWildcardMatch _ [] = Nothing
@@ -39,3 +39,8 @@ longerWildcardMatch _ [] = Nothing
 longerWildcardMatch [] _ = Nothing
 longerWildcardMatch (wc:pp) (s:ss) = (mmap (s:) (match wc (wc:pp) ss)) -- `debug` (show ("matching '" ++ (wc:pp) ++ "' and '" ++ ss ++ "'"))
 
+transformationApply :: Eq a => a -> ([a] -> [a]) -> [a] -> ([a], [a]) -> Maybe [a]
+transformationApply wc f s t = mmap (substitute wc sec . f) ok
+    where sec = (snd t)
+          fir = (fst t)
+          ok  = match wc fir s 

@@ -16,18 +16,16 @@ substitute wc (l:ls) sub
     | wc == l = sub ++ (substitute wc ls sub)
     | otherwise = l : (substitute wc ls sub)
 
--- match :: Eq a => a -> [a] -> [a] -> Maybe [a] (Type will make debug print error)
+match :: Eq a => a -> [a] -> [a] -> Maybe [a]
 match _ [] [] = Just []
 match _ [] _ = Nothing `debug` "match got empty p"
 match _ _ [] = Nothing `debug` "match got empty s"
 
 match wc (p:pp) (s:ss)
-    | p == wc = if(singleWildCardMatch (p:pp) (s:ss) /= Nothing) then (singleWildCardMatch (p:pp) (s:ss)) else (longerWildCardMatch (p:pp) (s:ss))
+    | p == wc = if(singleWildcardMatch (p:pp) (s:ss) /= Nothing) then (singleWildcardMatch (p:pp) (s:ss)) else (longerWildcardMatch (p:pp) (s:ss))
     | p == s = match wc pp ss
     | otherwise = Nothing
 
-singleWildCardMatch (wc:pp) (s:ss)
-    | pp == ss = Just [s]
-    | otherwise = Nothing
+singleWildcardMatch (wc:ps) (x:xs) = mmap (const [x]) (match wc ps xs)
 
-longerWildCardMatch (wc:pp) (s:ss) = (mmap (s:) (match wc (wc:pp) ss)) --`debug` (show ("matching '" ++ (wc:pp) ++ "' and '" ++ ss ++ "'"))
+longerWildcardMatch (wc:ps) (x:xs) = mmap (x:) (match wc (wc:ps) xs)

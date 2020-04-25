@@ -8,6 +8,12 @@ mmap :: (a -> b) -> Maybe a -> Maybe b
 mmap f  Nothing  = Nothing
 mmap f (Just x)  = Just (f x)
 
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse Nothing x = x
+orElse (Just a) _ = Just a
+
+try :: (a -> Maybe a) -> a -> a
+try f x = maybe x id (f x)
 
 -- Own implemented functions
 substitute :: Eq a => a -> [a] -> [a] -> [a]
@@ -20,14 +26,16 @@ substitute wc (l:ls) sub
 match _ [] [] = Just []
 match _ [] _ = Nothing `debug` "match got empty p"
 match _ _ [] = Nothing `debug` "match got empty s"
-
 match wc (p:pp) (s:ss)
-    | p == wc = if(singleWildCardMatch (p:pp) (s:ss) /= Nothing) then (singleWildCardMatch (p:pp) (s:ss)) else (longerWildCardMatch (p:pp) (s:ss))
-    | p == s = match wc pp ss
+    | p == wc = orElse (singleWildcardMatch (p:pp) (s:ss)) (longerWildcardMatch (p:pp) (s:ss))
+    | p == s = match wc pp ss `debug` "trimming"
     | otherwise = Nothing
 
-singleWildCardMatch (wc:pp) (s:ss)
-    | pp == ss = Just [s]
-    | otherwise = Nothing
+singleWildcardMatch _ [] = Nothing
+singleWildcardMatch [] _ = Nothing
+singleWildcardMatch (wc:pp) (s:ss) = mmap (const [s]) (match wc pp ss)
 
-longerWildCardMatch (wc:pp) (s:ss) = (mmap (s:) (match wc (wc:pp) ss)) --`debug` (show ("matching '" ++ (wc:pp) ++ "' and '" ++ ss ++ "'"))
+longerWildcardMatch _ [] = Nothing
+longerWildcardMatch [] _ = Nothing
+longerWildcardMatch (wc:pp) (s:ss) = (mmap (s:) (match wc (wc:pp) ss)) -- `debug` (show ("matching '" ++ (wc:pp) ++ "' and '" ++ ss ++ "'"))
+

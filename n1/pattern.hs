@@ -1,33 +1,33 @@
-import Data.List
-substitute :: Eq a => a -> [a] -> [a] -> [a] 
-substitute _ [] _  = []
-substitute wc (t:ts) s
-          | wc == t = s ++ (substitute wc ts s)
-          | otherwise = t : substitute wc ts s
+import Debug.Trace
 
-match :: Eq a => a -> [a] -> [a] -> Maybe [a]
-match wc p  [] = Nothing 
-match wc [] s  = Nothing 
+debug = flip trace
 
-match wc (p:pp) s  
-            | p == wc = if (pp == tail (s))
-                            then singleWildcardMatch pp s
-                        else
-                            longerWildcardMatch (p:pp) s
-            | s == p:pp = Just []
-            | otherwise = match wc pp (tail s)
+-- Given utility functions
 
-singleWildcardMatch :: Eq a => [a] -> [a] -> Maybe [a]
-singleWildcardMatch [] _ = Nothing
-singleWildcardMatch _ [] = Nothing
-singleWildcardMatch (p:ps) (s:ss)
-            | match p (p:ps) (s:ss) == Nothing = Just [s] 
-            | otherwise = Nothing
-                    
-longerWildcardMatch :: Eq a => [a] -> [a] -> Maybe [a]
-longerWildcardMatch _ [] = Nothing
-longerWildcardMatch [] _ = Nothing
-longerWildcardMatch (p:ps) (s:ss) 
-    | match p (p:ps) (s:ss) == Nothing =  Just (maybe [] (s :) (match p (p:ps) ss))
-    | otherwise = Just (maybe [] (s :) (match p (p:ps) ss))
+mmap :: (a -> b) -> Maybe a -> Maybe b
+mmap f  Nothing  = Nothing
+mmap f (Just x)  = Just (f x)
 
+
+-- Own implemented functions
+substitute :: Eq a => a -> [a] -> [a] -> [a]
+substitute _ [] _ = []
+substitute wc (l:ls) sub
+    | wc == l = sub ++ (substitute wc ls sub)
+    | otherwise = l : (substitute wc ls sub)
+
+-- match :: Eq a => a -> [a] -> [a] -> Maybe [a] (Type will make debug print error)
+match _ [] [] = Just []
+match _ [] _ = Nothing `debug` "match got empty p"
+match _ _ [] = Nothing `debug` "match got empty s"
+
+match wc (p:pp) (s:ss)
+    | p == wc = if(singleWildCardMatch (p:pp) (s:ss) /= Nothing) then (singleWildCardMatch (p:pp) (s:ss)) else (longerWildCardMatch (p:pp) (s:ss))
+    | p == s = match wc pp ss
+    | otherwise = Nothing
+
+singleWildCardMatch (wc:pp) (s:ss)
+    | pp == ss = Just [s]
+    | otherwise = Nothing
+
+longerWildCardMatch (wc:pp) (s:ss) = (mmap (s:) (match wc (wc:pp) ss)) --`debug` (show ("matching '" ++ (wc:pp) ++ "' and '" ++ ss ++ "'"))

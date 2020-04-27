@@ -1,5 +1,3 @@
-
--- Pattern Module
 module Pattern
        ( mmap
        , orElse
@@ -8,7 +6,9 @@ module Pattern
        , match
        , singleWildcardMatch
        , longerWildcardMatch
-       , transformationApply) where
+       , transformationApply
+       , transformationsApply
+       ) where
 
 -- Given utility functions
 
@@ -52,3 +52,10 @@ transformationApply wc f s t = mmap (substitute wc sec . f) ok
     where sec = (snd t)
           fir = (fst t)
           ok  = match wc fir s 
+
+transformationsApply :: Eq a => a -> ([a] -> [a]) -> [([a], [a])] -> [a] -> Maybe [a]
+transformationsApply _ _ [] _ = Nothing
+transformationsApply wc f (p:lps) s
+                        | trans == Nothing = transformationsApply wc f lps s
+                        | otherwise = trans
+                        where trans = transformationApply wc f s p

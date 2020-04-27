@@ -1,4 +1,4 @@
-import Data.List
+import Pattern
 type Phrase     = [String]
 type PhrasePair = (Phrase, Phrase)
 type BotBrain   = [(Phrase, [Phrase])]
@@ -21,9 +21,16 @@ reflections =
     ("yours", "mine"),
     ("you", "me")
   ]
+
 reflect :: Phrase -> Phrase
 reflect [] = []
 reflect (w:ws) 
             | found == [] = [w] ++ reflect ws
             | otherwise   = (snd (head found)) : reflect ws
             where found   = filter (\(a, b) -> a==w) $ reflections
+
+rulesApply :: [PhrasePair] -> Phrase -> Phrase
+rulesApply ps phr
+            | applied == Nothing = [""]
+            | otherwise = (\(Just p) -> p) applied
+            where applied = transformationsApply "*" (reflect) ps phr

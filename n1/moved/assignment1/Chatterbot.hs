@@ -24,7 +24,7 @@ type BotBrain = [(Phrase, [Phrase])]
 
 
 --------------------------------------------------------
-
+-- Map the function (map2 (id, pick r) (tuple)) over the entire brain. Return curried function rulesApply waiting for phrase input.
 stateOfMind :: BotBrain -> IO (Phrase -> Phrase)
 stateOfMind brain = 
     do
@@ -36,13 +36,13 @@ rulesApply :: [PhrasePair] -> Phrase -> Phrase
 rulesApply ps phr
             | applied == Nothing = []
             | otherwise = (\(Just p) -> p) applied
-            where applied = transformationsApply "*" (reflect) ps phr
+            where applied = transformationsApply "*" reflect ps phr
 
 reflect :: Phrase -> Phrase
 reflect [] = []
 reflect (w:ws) 
-            | found == [] = [w] ++ reflect ws
-            | otherwise   = (snd (head found)) : reflect ws
+            | found == [] = w : reflect ws
+            | otherwise   = (snd $ head found) : reflect ws
             where found   = filter (\(a, b) -> a==w) $ reflections
 reflections =
   [ ("am",     "are"),
@@ -77,7 +77,7 @@ prepare = reduce . words . map toLower . filter (not . flip elem ".,:;*!#%&|")
 
 rulesCompile :: [(String, [String])] -> BotBrain
 rulesCompile [] = []
-rulesCompile ((k, a):ts) = (words k, map words a) : rulesCompile ts
+rulesCompile ((k, a):ts) = map2 (words . map toLower, map words) (k, a) : rulesCompile ts
 
 
 --------------------------------------
@@ -167,8 +167,5 @@ transformationApply wc f s t = mmap (substitute wc sec . f) ok
 -- Applying a list of patterns until one succeeds
 transformationsApply :: Eq a => a -> ([a] -> [a]) -> [([a], [a])] -> [a] -> Maybe [a]
 transformationsApply _ _ [] _ = Nothing
-transformationsApply wc f (p:lps) s
-                        | trans == Nothing = transformationsApply wc f lps s
-                        | otherwise = trans
-                        where trans = transformationApply wc f s p
+transformationsApply wc f (p:lps) s = orElse (transformationApply wc f s p) (transformationsApply wc f lps s)
 

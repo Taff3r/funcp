@@ -2,6 +2,7 @@ module Chatterbot where
 import Utilities
 import System.Random
 import Data.Char
+import Data.Maybe
 
 chatterbot :: String -> [(String, [String])] -> IO ()
 chatterbot botName botRules = do
@@ -34,16 +35,16 @@ stateOfMind brain =
 
 rulesApply :: [PhrasePair] -> Phrase -> Phrase
 rulesApply ps phr
-            | applied == Nothing = []
+            | isNothing applied = []
             | otherwise = (\(Just p) -> p) applied
             where applied = transformationsApply "*" reflect ps phr
 
 reflect :: Phrase -> Phrase
 reflect [] = []
 reflect (w:ws) 
-            | found == [] = w : reflect ws
-            | otherwise   = (snd $ head found) : reflect ws
-            where found   = filter (\(a, b) -> a==w) $ reflections
+            | null found  = w : reflect ws
+            | otherwise   = snd (head found) : reflect ws
+            where found   = filter (\(a, b) -> a==w) reflections
 reflections =
   [ ("am",     "are"),
     ("was",    "were"),
@@ -102,8 +103,7 @@ reduce :: Phrase -> Phrase
 reduce = reductionsApply reductions
 
 reductionsApply :: [PhrasePair] -> Phrase -> Phrase
-{- TO BE WRITTEN -}
-reductionsApply _ = id
+reductionsApply r = fix (try (transformationsApply "*" id r))
 
 
 -------------------------------------------------------
@@ -114,8 +114,8 @@ reductionsApply _ = id
 substitute :: Eq a => a -> [a] -> [a] -> [a]
 substitute _ [] _ = []
 substitute wc (l:ls) sub
-    | wc == l = sub ++ (substitute wc ls sub)
-    | otherwise = l : (substitute wc ls sub)
+    | wc == l = sub ++ substitute wc ls sub
+    | otherwise = l : substitute wc ls sub
 
 -- Tries to match two lists. If they match, the result consists of the sublist
 -- bound to the wildcard in the pattern list.
@@ -136,7 +136,7 @@ singleWildcardMatch (wc:pp) (s:ss) = mmap (const [s]) (match wc pp ss)
 
 longerWildcardMatch _ [] = Nothing
 longerWildcardMatch [] _ = Nothing
-longerWildcardMatch (wc:pp) (s:ss) = (mmap (s:) (match wc (wc:pp) ss))
+longerWildcardMatch (wc:pp) (s:ss) = mmap (s:) (match wc (wc:pp) ss)
 
 -- Test cases --------------------
 
@@ -159,8 +159,8 @@ matchCheck = matchTest == Just testSubstitutions
 -- Applying a single pattern
 transformationApply :: Eq a => a -> ([a] -> [a]) -> [a] -> ([a], [a]) -> Maybe [a]
 transformationApply wc f s t = mmap (substitute wc sec . f) ok
-    where sec = (snd t)
-          fir = (fst t)
+    where sec = snd t
+          fir = fst t
           ok  = match wc fir s
 
 

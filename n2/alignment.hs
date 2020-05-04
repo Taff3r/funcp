@@ -51,8 +51,10 @@ outputOptAlignments p s = showAlignments len alignments
 
 showAlignments :: Int -> [(String, String)] -> IO()
 showAlignments n al = putStrLn $ formatAlignments al ++ "There are " ++ show n ++ " optimal alignment(s)!"
+
 formatAlignments :: [AlignmentType] -> String
 formatAlignments = concatMap (\(s,p) -> formatString s ++ "\n" ++ formatString p ++ "\n\n")
+
 formatString :: String -> String
 formatString "" = ""
 formatString (s:ss) = s : " " ++ formatString ss

@@ -3,9 +3,9 @@ import Data.List
  -- Code by Simon Tenggren (si6187te-s) 
  -- &&      Elias Rudberg  (TODO: ELIAS)
 
-scoreMatch    = 1
+scoreMatch    =  0 -- Or should it be 1?
 scoreMismatch = -1
-scoreSpace    = -2
+scoreSpace    = -1 -- Or should it be -2?
 
 type AlignmentType = (String, String)
 
@@ -35,4 +35,11 @@ maximaBy valueFcn xs = [x | x <- sorted, valueFcn x == score]
                            score  = valueFcn (head sorted)
 
 optAlignments :: String -> String -> [AlignmentType]
-optAlignments (s:ss) (p:ps) = undefined
+optAlignments (s:ss)  [] = attachHeads s '-' (optAlignments ss []) 
+optAlignments [] (p:ps)  = attachHeads '-' p (optAlignments [] ps)   
+optAlignments [] []      = [("","")]
+optAlignments (s:ss) (p:ps) = maximaBy (uncurry similiarityScore) branches
+                           where branches = branch1 ++ branch2 ++ branch3
+                                 branch1 = attachHeads '-' p (optAlignments (s:ss) ps)
+                                 branch2 = attachHeads s '-' (optAlignments ss (p:ps))
+                                 branch3 = attachHeads s p (optAlignments ss ps)

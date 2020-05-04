@@ -43,3 +43,16 @@ optAlignments (s:ss) (p:ps) = maximaBy (uncurry similiarityScore) branches
                                  branch1 = attachHeads '-' p (optAlignments (s:ss) ps)
                                  branch2 = attachHeads s '-' (optAlignments ss (p:ps))
                                  branch3 = attachHeads s p (optAlignments ss ps)
+
+
+outputOptAlignments p s = showAlignments len alignments
+                        where alignments = optAlignments p s
+                              len        = length alignments
+
+showAlignments :: Int -> [(String, String)] -> IO()
+showAlignments n al = putStrLn $ formatAlignments al ++ "There are " ++ show n ++ " optimal alignment(s)!"
+formatAlignments :: [AlignmentType] -> String
+formatAlignments = concatMap (\(s,p) -> formatString s ++ "\n" ++ formatString p ++ "\n\n")
+formatString :: String -> String
+formatString "" = ""
+formatString (s:ss) = s : " " ++ formatString ss

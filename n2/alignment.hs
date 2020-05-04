@@ -1,9 +1,8 @@
 import Data.List
 
-{-
- - Code by Simon Tenggren (si6187te-s) 
- - &&      Elias Rudberg  (TODO: ELIAS)
- - }
+ -- Code by Simon Tenggren (si6187te-s) 
+ -- &&      Elias Rudberg  (TODO: ELIAS)
+
 scoreMatch    = 1
 scoreMismatch = -1
 scoreSpace    = -2

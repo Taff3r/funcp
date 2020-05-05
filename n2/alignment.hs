@@ -18,12 +18,6 @@ similiarityScore (s:ss) (p:ps)
         | s == p               = scoreMatch + similiarityScore ss ps
         | otherwise            = scoreMismatch + similiarityScore ss ps
 
-similiarityScore' :: String -> String -> Int
--- similiarityScore' _ [] = 0
--- similiarityScore' [] _ = 0
-similiarityScore' = tableScore 
-        
-
 -- Attach heads adds h1 and h2 as heads to all lists in the list of tuples of lists (aList)
 -- Uses list comprehension instead of recursion
 -- attachHeads 0 1 [([2,2,2], [3,3,3])] = [([0,2,2,2], [1,3,3,3])]
@@ -51,7 +45,7 @@ optAlignments (s:ss) (p:ps) = maximaBy (uncurry similiarityScore) branches
 
 
 outputOptAlignments p s = showAlignments len alignments
-                        where alignments = optAlignments p s
+                        where alignments = snd $ tableAlignment p s
                               len        = length alignments
 
 showAlignments :: Int -> [(String, String)] -> IO()
@@ -65,44 +59,44 @@ formatString "" = ""
 formatString (s:ss) = s : " " ++ formatString ss
 
 tableAlignment :: String -> String -> (Int, [AlignmentType])
-tableAlignment s p = alignmentScore (length s) (length p)
+tableAlignment s p = (score, revl) 
     where
+       revl       = map (\(a, b) -> (reverse a, reverse b)) l
+       (score, l) = alignmentScore (length s) (length p)
        alignmentScore :: Int -> Int -> (Int, [AlignmentType])
        alignmentScore i j = alignmentTable !! i !! j
 
-       alignmentTable :: [[(Int, [AlignmentType])]] -- [alignmentEntry]
-       alignmentTable = [[alignmentEntry i j | i <- [0..]] | j <- [0..]]
+       alignmentTable :: [[(Int, [AlignmentType])]] 
+       alignmentTable = [[alignmentEntry i j | j <- [0..]] | i <- [0..]]
 
        alignmentEntry :: Int -> Int -> (Int, [AlignmentType])
        -- base cases
        alignmentEntry 0 0 = (0, [("" , "")])
        alignmentEntry i 0 = (i * scoreSpace, [(take i s, replicate i '-')])
-       alignmentEntry 0 j = (j * scoreSpace, [(replicate j '-', take j p)])
-       -- (Int, [AlignmentType])
-       alignmentEntry i j = (fst (head list), concatMap snd list) 
-                        where  
-                             -- :t list :: [(int, [AlignmentType])]
-                             list  = maximaBy fst [(s1 + match x y,  branch1),
-                                                     (s2 + scoreSpace, branch2),
-                                                     (s3 + scoreSpace, branch3)]
-                             branch1  = attachHeads '-' y a1
-                             branch2  = attachHeads x '-' a2
-                             branch3  = attachHeads x y   a3
-                             match x y 
-                                  | x == y = scoreMatch
-                                  | otherwise = scoreMismatch
-                             (s1, a1) = alignmentScore i (j - 1) -- (Int, [AlignmentType])
-                             (s2, a2) = alignmentScore (i - 1) j
-                             (s3, a3) = alignmentScore (i - 1) (j - 1)
-                             x = s !! (i-1)
-                             y = p !! (j-1)
+       alignmentEntry 0 j = (j * scoreSpace, [(replicate j '-', take j s)])
+       alignmentEntry i j
+            | x == y = (scoreMatch + s3 , attachHeads x y a3)
+            | otherwise = (fst (head list), concatMap snd list)
+                    where 
+                         list     = maximaBy fst [(s1 + scoreMismatch, branch1),
+                                                  (s2 + scoreMismatch, branch2),
+                                                  (s3 + scoreMismatch, branch3)] 
+                         (s1, a1) = alignmentScore i (j - 1)
+                         (s2, a2) = alignmentScore (i - 1) j
+                         (s3, a3) = alignmentScore (i - 1) (j - 1)
+                         branch1  = attachHeads '-' y  a1
+                         branch2  = attachHeads x '-'  a2 
+                         branch3  = attachHeads x y    a3 
+                         
+                         x = s !! (i-1)
+                         y = p !! (j-1)
      
 tableScore :: String -> String -> Int
 tableScore s p = score (length s) (length p)
   where
     score i j = scoreTable !!i!!j
     scoreTable :: [[Int]]
-    scoreTable = [[ scoreEntry i j | i <-[0..]] | j <-[0..] ]
+    scoreTable = [[ scoreEntry j i | i <-[0..]] | j <-[0..] ]
     scoreEntry :: Int -> Int -> Int
     -- base cases
     scoreEntry 0 0 = 0              -- Score 0 when length of both strings are 0

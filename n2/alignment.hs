@@ -18,6 +18,11 @@ similiarityScore (s:ss) (p:ps)
         | s == p               = scoreMatch + similiarityScore ss ps
         | otherwise            = scoreMismatch + similiarityScore ss ps
 
+similiarityScore' :: String -> String -> Int
+-- similiarityScore' _ [] = 0
+-- similiarityScore' [] _ = 0
+similiarityScore' = tableScore 
+        
 
 -- Attach heads adds h1 and h2 as heads to all lists in the list of tuples of lists (aList)
 -- Uses list comprehension instead of recursion
@@ -58,3 +63,55 @@ formatAlignments = concatMap (\(s,p) -> formatString s ++ "\n" ++ formatString p
 formatString :: String -> String
 formatString "" = ""
 formatString (s:ss) = s : " " ++ formatString ss
+
+tableAlignment :: String -> String -> (Int, [AlignmentType])
+tableAlignment s p = alignmentScore (length s) (length p)
+    where
+       alignmentScore :: Int -> Int -> (Int, [AlignmentType])
+       alignmentScore i j = alignmentTable !! i !! j
+
+       alignmentTable :: [[(Int, [AlignmentType])]] -- [alignmentEntry]
+       alignmentTable = [[alignmentEntry i j | i <- [0..]] | j <- [0..]]
+
+       alignmentEntry :: Int -> Int -> (Int, [AlignmentType])
+       -- base cases
+       alignmentEntry 0 0 = (0, [("" , "")])
+       alignmentEntry i 0 = (i * scoreSpace, [(take i s, replicate i '-')])
+       alignmentEntry 0 j = (j * scoreSpace, [(replicate j '-', take j p)])
+       -- (Int, [AlignmentType])
+       alignmentEntry i j = (fst (head list), concatMap snd list) 
+                        where  
+                             -- :t list :: [(int, [AlignmentType])]
+                             list  = maximaBy fst [(s1 + match x y,  branch1),
+                                                     (s2 + scoreSpace, branch2),
+                                                     (s3 + scoreSpace, branch3)]
+                             branch1  = attachHeads '-' y a1
+                             branch2  = attachHeads x '-' a2
+                             branch3  = attachHeads x y   a3
+                             match x y 
+                                  | x == y = scoreMatch
+                                  | otherwise = scoreMismatch
+                             (s1, a1) = alignmentScore i (j - 1) -- (Int, [AlignmentType])
+                             (s2, a2) = alignmentScore (i - 1) j
+                             (s3, a3) = alignmentScore (i - 1) (j - 1)
+                             x = s !! (i-1)
+                             y = p !! (j-1)
+     
+tableScore :: String -> String -> Int
+tableScore s p = score (length s) (length p)
+  where
+    score i j = scoreTable !!i!!j
+    scoreTable :: [[Int]]
+    scoreTable = [[ scoreEntry i j | i <-[0..]] | j <-[0..] ]
+    scoreEntry :: Int -> Int -> Int
+    -- base cases
+    scoreEntry 0 0 = 0              -- Score 0 when length of both strings are 0
+    scoreEntry i 0 = scoreSpace * i -- Score space * i when right hand string is empty
+    scoreEntry 0 j = scoreSpace * j -- Score space * j when left hand string is empty 
+    scoreEntry i j 
+        | x == '-' || y == '-' = scoreSpace    + max (score i (j - 1)) (score (i - 1) j)
+        | x == y               = scoreMatch    + score (i - 1) (j - 1)
+        | otherwise            = scoreMismatch + score (i - 1) (j - 1)
+      where
+         x = s !! (i-1)
+         y = p !! (j-1)

@@ -78,8 +78,8 @@ tableAlignment s p = (score, revl)
             | x == y = (scoreMatch + s3 , attachHeads x y a3)
             | otherwise = (fst (head list), concatMap snd list)
                     where 
-                         list     = maximaBy fst [(s1 + scoreMismatch, branch1),
-                                                  (s2 + scoreMismatch, branch2),
+                         list     = maximaBy fst [(s1 + scoreSpace, branch1),
+                                                  (s2 + scoreSpace, branch2),
                                                   (s3 + scoreMismatch, branch3)] 
                          (s1, a1) = alignmentScore i (j - 1)
                          (s2, a2) = alignmentScore (i - 1) j
